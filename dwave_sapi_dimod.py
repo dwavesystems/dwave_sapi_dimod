@@ -12,6 +12,7 @@ from dwave_sapi2.util import get_chimera_adjacency, qubo_to_ising
 from dwave_sapi2.embedding import find_embedding, embed_problem, unembed_answer
 
 __all__ = ['SAPISampler']
+__version__ = '0.1'
 
 PY2 = sys.version_info[0] == 2
 if PY2:
