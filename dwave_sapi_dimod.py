@@ -59,7 +59,7 @@ class SAPISampler(DiscreteModelSampler):
 
         # we need to know what variables we need
         S = {(v, v) for v in h}
-        S.add(*J)
+        S.update(J)
 
         # find an embedding
         embeddings = find_embedding(S, A)

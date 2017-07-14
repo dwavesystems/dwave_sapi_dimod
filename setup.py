@@ -5,6 +5,6 @@ from dwave_sapi_dimod import __version__
 setup(
     name='dwave_sapi_dimod',
     version=__version__,
-    packages=find_packages(),
+    py_modules=['dwave_sapi_dimod'],
     install_requires=['dimod']
 )
