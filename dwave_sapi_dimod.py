@@ -80,7 +80,7 @@ class SAPISampler(DiscreteModelSampler):
         # parse the response
         for soln, energy in zip(results, answer['energies']):
             sample = {v: soln[v] for v in h}
-            response.add_sample(sample, energy)
+            response.add_sample(sample, h=h, J=J)
 
         return response
 
@@ -111,7 +111,7 @@ class SAPISampler(DiscreteModelSampler):
         # parse the response
         for soln, energy in zip(answer['solutions'], answer['energies']):
             sample = {v: soln[v] for v in h}
-            response.add_sample(sample, energy)
+            response.add_sample(sample, h=h, J=J)
 
         return response
 
