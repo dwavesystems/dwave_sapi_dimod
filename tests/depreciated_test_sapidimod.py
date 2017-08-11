@@ -1,5 +1,6 @@
 import unittest
 import logging
+import random
 
 from dimod import qubo_energy, ising_energy
 from dimod.samplers.tests.generic_sampler_tests import TestSolverAPI
@@ -119,7 +120,18 @@ class TestSapiSampler(unittest.TestCase, TestSolverAPI):
 
         nodes = set().union(*Q)
 
-        response = self.sampler.sample_qubo(Q, num_reads=10)
+        response = self.sampler.sample_qubo(Q)
 
         for sample, energy in response.items():
             self.assertEqual(qubo_energy(Q, sample), energy)
+            print sample, energy
+
+    def test_bug3(self):
+        """disconnected graph"""
+        h = {v: random.uniform(-2, 2) for v in [0, 1, 2, 3, 4, 5, 6, 7]}
+
+        J = {edge: random.uniform(-1, 1) for edge in [(1, 3), (1, 5), (1, 7), (2, 3), (2, 4),
+                                                      (2, 6), (3, 5), (4, 5), (5, 6)]}
+
+        response = self.sampler.sample_ising(h, J)
+        print response

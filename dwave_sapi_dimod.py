@@ -1,134 +1,125 @@
 import sys
-import random
-import itertools
-import logging
 
-from dimod import DiscreteModelSampler, SpinResponse, ising_energy, qubo_to_ising
-from dimod.decorators import ising, ising_index_labels, qubo, qubo_index_labels
+import dimod
 
+from dwave_sapi2.remote import RemoteConnection
 from dwave_sapi2.local import local_connection
 from dwave_sapi2.core import solve_ising, solve_qubo
-from dwave_sapi2.util import get_chimera_adjacency, qubo_to_ising
+from dwave_sapi2.util import get_hardware_adjacency
 from dwave_sapi2.embedding import find_embedding, embed_problem, unembed_answer
 
-__all__ = ['SAPISampler']
-__version__ = '0.1'
+__all__ = ['SAPILocalSampler', 'SAPISampler']
+__version__ = '0.2'
 
 PY2 = sys.version_info[0] == 2
 if PY2:
-    range = xrange
+    # range = xrange
     iteritems = lambda d: d.iteritems()
-    zip = itertools.izip
+    # zip = itertools.izip
 else:
     iteritems = lambda d: d.items()
 
-solver = local_connection.get_solver("c4-sw_optimize")
-A = get_chimera_adjacency(4, 4, 4)
 
-logging.basicConfig(format='%(levelname)s:%(funcName)s:%(message)s')
-log = logging.getLogger()
+class SAPISampler(dimod.TemplateSampler):
+    def __init__(self, url, token, solver_name):
+        dimod.TemplateSampler.__init__(self)
 
+        self.connection = connection = RemoteConnection(url, token)
+        self.solver = solver = connection.get_solver(solver_name)
 
-class SAPISampler(DiscreteModelSampler):
+        self.structure = get_hardware_adjacency(solver)
 
-    @ising(1, 2)
-    @ising_index_labels(1, 2)
-    def sample_ising(self, h, J, num_reads=1, **sapi_kwargs):
+    @dimod.decorators.ising(1, 2)
+    def sample_structured_ising(self, h, J, num_reads=50, **sapi_kwargs):
+        """TODO"""
+        solver = self.solver
 
-        log.debug('INPUT h: %s', h)
-        log.debug('INPUT J: %s', J)
-        log.debug('INPUT num_reads: %s', num_reads)
+        # sapi expects a list
+        h_list = [0.] * solver.properties['num_qubits']
+        for v, bias in iteritems(h):
+            h_list[v] = bias
 
-        # initialize the response object.
-        response = SpinResponse()
+        # later we will want to do this asynchronously
+        answer = solve_ising(solver, h_list, J, num_reads=num_reads, **sapi_kwargs)
 
-        # if J is empty, then we are already done
-        if not J:
-            log.debug('Empty J, determining sample from h')
-            for __ in range(num_reads):
-                response.add_sample({v: _linear_to_spin(bias)
-                                    for v, bias in iteritems(h)}, h=h, J=J)
-            return response
+        # parse the answers
+        solutions = answer['solutions']
+        energies = answer['energies']
+        num_occurrences = answer['num_occurrences']
 
-        # add number of reads to SAPI
-        sapi_kwargs['num_reads'] = num_reads
+        samples = ({v: sample[v] for v in h} for sample in solutions)
+        sample_data = ({'num_occurrences': n} for n in num_occurrences)
 
-        # convert h to a list
-        h_list = [h[i] for i in range(len(h))]
-        log.debug('Converted h from %s to %s', h, h_list)
+        response = dimod.SpinResponse()
+        response.add_samples_from(samples, energies, sample_data)
 
-        # we need to know what variables we need
-        S = {(v, v) for v in h}
-        S.update(J)
+        return response
+
+    @dimod.decorators.qubo(1)
+    def sample_structured_qubo(self, Q, num_reads=50, **sapi_kwargs):
+        """TODO"""
+        variables = set().union(*Q)
+
+        solver = self.solver
+
+        answer = solve_qubo(solver, Q, num_reads=num_reads, **sapi_kwargs)
+
+        # parse the answers
+        solutions = answer['solutions']
+        energies = answer['energies']
+        num_occurrences = answer['num_occurrences']
+
+        samples = ({v: sample[v] for v in variables} for sample in solutions)
+        sample_data = ({'num_occurrences': n} for n in num_occurrences)
+
+        response = dimod.BinaryResponse()
+        response.add_samples_from(samples, energies, sample_data)
+
+        return response
+
+    @dimod.decorators.ising(1, 2)
+    @dimod.decorators.ising_index_labels(1, 2)
+    def sample_ising(self, h, J, num_reads=50, **sapi_kwargs):
+        """TODO"""
+
+        solver = self.solver
+
+        # sapi expects a list, ising_index_labels converted the keys of
+        # h to be indices 0, n-1
+        h_list = [0.] * len(h)
+        for v, bias in iteritems(h):
+            h_list[v] = bias
 
         # find an embedding
+        A = self.structure
+        S = set(J)
+        S.update({(v, v) for v in h})
         embeddings = find_embedding(S, A)
-        [h0, j0, jc, embeddings] = embed_problem(h_list, J, embeddings, A)
-        log.debug('Embedded h0: %s', h0)
-        log.debug('Embedded j0: %s', j0)
-        log.debug('Embedded jc: %s', jc)
 
-        # solve on sapi
-        j_emb = j0
-        j_emb.update(jc)
-        answer = solve_ising(solver, h0, j_emb, **sapi_kwargs)
+        # embed the problem
+        (h0, j0, jc, new_emb) = embed_problem(h_list, J, embeddings, A)
 
-        # unembed
-        results = unembed_answer(answer['solutions'], embeddings,
-                                 broken_chains='minimize_energy', h=h_list, j=J)
+        emb_j = j0.copy()
+        emb_j.update(jc)
+        answer = solve_ising(solver, h0, emb_j, num_reads=6)
 
-        # parse the response
-        for soln, energy in zip(results, answer['energies']):
-            sample = {v: soln[v] for v in h}
-            response.add_sample(sample, h=h, J=J)
+        # parse the answers
+        solutions = unembed_answer(answer['solutions'], new_emb, 'minimize_energy', h_list, J)
+        energies = answer['energies']
+        assert len(solutions) == len(energies)
+        num_occurrences = answer['num_occurrences']
 
-        return response
+        samples = ({v: sample[v] for v in h} for sample in solutions)
+        sample_data = ({'num_occurrences': n} for n in num_occurrences)
 
-    @ising(1, 2)
-    @ising_index_labels(1, 2)
-    def sample_structured_ising(self, h, J, num_reads=1, **sapi_kwargs):
-
-        response = SpinResponse()
-
-        # if J is empty, then we are already done
-        if not J:
-            log.debug('Empty J, determining sample from h')
-            for __ in range(num_reads):
-                response.add_sample({v: _linear_to_spin(bias) for v, bias in iteritems(h)},
-                                    h=h, J=J)
-            return response
-
-        # add number of reads to SAPI
-        sapi_kwargs['num_reads'] = num_reads
-
-        # convert h to a list
-        h_list = [h[i] for i in range(len(h))]
-        log.debug('Converted h from %s to %s', h, h_list)
-
-        # get the answer from sapi solver
-        answer = solve_ising(solver, h_list, J, **sapi_kwargs)
-
-        # parse the response
-        for soln, energy in zip(answer['solutions'], answer['energies']):
-            sample = {v: soln[v] for v in h}
-            response.add_sample(sample, h=h, J=J)
+        response = dimod.SpinResponse()
+        response.add_samples_from(samples, energies, sample_data)
 
         return response
 
-    @qubo(1)
-    def sample_qubo(self, Q, **args):
-        h, J, offset = qubo_to_ising(Q)
-        spin_response = self.sample_ising(h, J, **args)
-        return spin_response.as_binary(offset)
 
-    def sample_structured_qubo(self, Q, **args):
-        return self.sample_qubo(Q, **args)
-
-
-def _linear_to_spin(bias):
-    if bias < 0:
-        return 1
-    elif bias > 0:
-        return -1
-    else:
-        return random.choice((-1, 1))
+class SAPILocalSampler(SAPISampler):
+    def __init__(self, solver_name):
+        dimod.TemplateSampler.__init__(self)
+        self.solver = solver = local_connection.get_solver(solver_name)
+        self.structure = get_hardware_adjacency(solver)
