@@ -96,12 +96,23 @@ class SAPISampler(dimod.TemplateSampler):
         S.update({(v, v) for v in h})
         embeddings = find_embedding(S, A)
 
+        # now it is possible that h_list might include nodes not in embedding, so let's
+        # handle that case here
+        if len(h_list) > len(embeddings):
+            emb_qubits = set().union(*embeddings)
+            while len(h_list) > len(embeddings):
+                for v in solver.properties['qubits']:
+                    if v not in emb_qubits:
+                        embeddings.append([v])
+                        emb_qubits.add(v)
+                        break
+
         # embed the problem
         (h0, j0, jc, new_emb) = embed_problem(h_list, J, embeddings, A)
 
         emb_j = j0.copy()
         emb_j.update(jc)
-        answer = solve_ising(solver, h0, emb_j, num_reads=6)
+        answer = solve_ising(solver, h0, emb_j, num_reads=num_reads, **sapi_kwargs)
 
         # parse the answers
         solutions = unembed_answer(answer['solutions'], new_emb, 'minimize_energy', h_list, J)
@@ -113,7 +124,7 @@ class SAPISampler(dimod.TemplateSampler):
         sample_data = ({'num_occurrences': n} for n in num_occurrences)
 
         response = dimod.SpinResponse()
-        response.add_samples_from(samples, energies, sample_data)
+        response.add_samples_from(samples, sample_data=sample_data, h=h, J=J)
 
         return response
 
