@@ -173,11 +173,11 @@ class MethodTests:
 class TestSAPISampler(unittest.TestCase, MethodTests):
     def test_connect(self):
         """ways of initializing the sampler"""
-        sampler = SAPISampler(url, token, solver)
+        sampler = SAPISampler(solver, url, token)
         # TODO, check defaults
 
     def setUp(self):
-        self.sampler = SAPISampler(url, token, solver)
+        self.sampler = SAPISampler(solver, url, token)
 
 
 class TestSAPILocalSampler(unittest.TestCase, MethodTests):
