@@ -120,10 +120,16 @@ class SAPISampler(dimod.TemplateSampler):
         # parse the answers
         solutions = answer['solutions']
         energies = answer['energies']
-        num_occurrences = answer['num_occurrences']
 
+        # convert the answer to a dict
         samples = ({v: sample[v] for v in variables} for sample in solutions)
-        sample_data = ({'num_occurrences': n} for n in num_occurrences)
+
+        # if information about the number of occurrences is returned, include it
+        if 'num_occurrences' in answer:
+            num_occurrences = answer['num_occurrences']
+            sample_data = ({'num_occurrences': n} for n in num_occurrences)
+        else:
+            sample_data = ({} for __ in solutions)
 
         response = dimod.BinaryResponse()
         response.add_samples_from(samples, energies, sample_data)
@@ -173,6 +179,10 @@ class SAPISampler(dimod.TemplateSampler):
         S.update({(v, v) for v in h})
         embeddings = find_embedding(S, A)
 
+        if J and not embeddings:
+            print S, embeddings
+            raise Exception('No embedding found')
+
         # now it is possible that h_list might include nodes not in embedding, so let's
         # handle that case here
         if len(h_list) > len(embeddings):
@@ -195,10 +205,14 @@ class SAPISampler(dimod.TemplateSampler):
         solutions = unembed_answer(answer['solutions'], new_emb, 'minimize_energy', h_list, J)
         energies = answer['energies']
         assert len(solutions) == len(energies)
-        num_occurrences = answer['num_occurrences']
 
         samples = ({v: sample[v] for v in h} for sample in solutions)
-        sample_data = ({'num_occurrences': n} for n in num_occurrences)
+
+        if 'num_occurrences' in answer:
+            num_occurrences = answer['num_occurrences']
+            sample_data = ({'num_occurrences': n} for n in num_occurrences)
+        else:
+            sample_data = ({} for __ in range(len(solutions)))
 
         response = dimod.SpinResponse()
         response.add_samples_from(samples, sample_data=sample_data, h=h, J=J)
