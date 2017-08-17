@@ -180,7 +180,6 @@ class SAPISampler(dimod.TemplateSampler):
         embeddings = find_embedding(S, A)
 
         if J and not embeddings:
-            print S, embeddings
             raise Exception('No embedding found')
 
         # now it is possible that h_list might include nodes not in embedding, so let's
