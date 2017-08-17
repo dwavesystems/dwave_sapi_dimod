@@ -85,7 +85,11 @@ class SAPISampler(dimod.TemplateSampler):
     def __init__(self, solver_name, url, token, proxy_url=None):
         dimod.TemplateSampler.__init__(self)
 
-        self.connection = connection = RemoteConnection(url, token)
+        if proxy_url is None:
+            self.connection = connection = RemoteConnection(url, token)
+        else:
+            self.connection = connection = RemoteConnection(url, token, proxy_url)
+
         self.solver = solver = connection.get_solver(solver_name)
 
         self.structure = get_hardware_adjacency(solver)
