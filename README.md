@@ -3,6 +3,15 @@ dwave_sapi_dimod
 
 A dimod wrapper for SAPI.
 
+Installation
+------------
+
+For python 2
+
+```
+python setup.py install
+```
+
 Examples
 --------
 
