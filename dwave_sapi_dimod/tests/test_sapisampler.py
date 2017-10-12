@@ -5,8 +5,6 @@ import dimod
 
 from dwave_sapi_dimod import SAPISampler, SAPILocalSampler
 
-from dwave_sapi_dimod.tests.sapi_token import url, token
-
 
 class MethodTests:
     def test_simple_problem(self):
@@ -163,16 +161,6 @@ class MethodTests:
             for v in variables:
                 self.assertIn(v, sample)
             self.assertLessEqual(abs(dimod.qubo_energy(Q, sample) - energy), 10**-5)
-
-
-class TestSAPISampler(unittest.TestCase, MethodTests):
-    def test_connect(self):
-        """ways of initializing the sampler"""
-        sampler = SAPISampler(solver, url, token)
-        # TODO, check defaults
-
-    def setUp(self):
-        self.sampler = SAPISampler(solver, url, token)
 
 
 class TestSAPILocalSampler(unittest.TestCase, MethodTests):

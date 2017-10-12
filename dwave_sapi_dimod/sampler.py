@@ -55,10 +55,9 @@ from dwave_sapi2.util import get_hardware_adjacency
 from dwave_sapi2.embedding import find_embedding, embed_problem, unembed_answer
 
 __all__ = ['SAPILocalSampler', 'SAPISampler']
-__version__ = '0.2'
 
-PY2 = sys.version_info[0] == 2
-if PY2:
+
+if _PY2:
     iteritems = lambda d: d.iteritems()
 else:
     iteritems = lambda d: d.items()
