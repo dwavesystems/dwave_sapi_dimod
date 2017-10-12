@@ -6,5 +6,5 @@ setup(
     name='dwave_sapi_dimod',
     version=__version__,
     py_modules=['dwave_sapi_dimod'],
-    install_requires=['dimod']
+    install_requires=['dimod>=0.3.0']
 )

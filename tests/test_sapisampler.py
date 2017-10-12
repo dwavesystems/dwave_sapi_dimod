@@ -5,12 +5,7 @@ import dimod
 
 from dwave_sapi_dimod import SAPISampler, SAPILocalSampler
 
-# ##################################
-# this should be depreciated
-import sapi_token
-url, token = sapi_token.token()
-solver = 'c4-sw_optimize'
-# ##################################
+from dwave_sapi_dimod.tests.sapi_token import url, token
 
 
 class MethodTests:
