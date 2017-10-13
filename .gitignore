@@ -6,3 +6,6 @@
 venv/
 
 sapi_token.py
+
+htmlcov/
+.coverage

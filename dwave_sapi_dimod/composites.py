@@ -37,10 +37,10 @@ class EmbeddingComposite(dimod.TemplateComposite):
             h_list[v] = bias
 
         # find an embedding
-        (__, A) = sampler.structure
+        (nodes, edges) = sampler.structure
         S = set(J)
         S.update({(v, v) for v in h})
-        embeddings = find_embedding(S, A)
+        embeddings = find_embedding(S, edges)
 
         if J and not embeddings:
             raise Exception('No embedding found')
@@ -57,13 +57,13 @@ class EmbeddingComposite(dimod.TemplateComposite):
                         break
 
         # embed the problem
-        h0, j0, jc, new_emb = embed_problem(h_list, J, embeddings, A)
+        h0, j0, jc, new_emb = embed_problem(h_list, J, embeddings, edges)
 
         emb_j = j0.copy()
         emb_j.update(jc)
 
         if 'chains' in sampler.solver.properties['parameters'] and 'chains' not in sapi_kwargs:
-            sapi_kwargs['chains'] = embeddings
+            sapi_kwargs['chains'] = new_emb
 
         emb_response = sampler.sample_ising(h0, emb_j, **sapi_kwargs)
 
