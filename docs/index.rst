@@ -25,9 +25,9 @@ Documentation
 .. toctree::
    :maxdepth: 1
 
-   samplers.rst
-   composites.rst
-
+   samplers
+   composites
+   license
 
 Indices and tables
 ------------------
