@@ -1,5 +1,5 @@
-dwave_sapi_dimod
-================
+D-Wave SAPI dimod
+=================
 
 A dimod wrapper for SAPI.
 
