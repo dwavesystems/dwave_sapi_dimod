@@ -9,3 +9,8 @@ sapi_token.py
 
 htmlcov/
 .coverage
+
+build/
+dist/
+generated/
+*.egg-info
