@@ -27,7 +27,7 @@ Initializing a remote solver
 >>> url = "http://myURL"
 >>> token = "myToken001"
 >>> solver_name = "solver_name"
->>> solver = sapi.SAPISampler(solver_name, url, token)]
+>>> solver = sapi.SAPISampler(solver_name, url, token)
 ```
 
 Initializing a local solver.
