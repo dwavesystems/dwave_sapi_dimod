@@ -15,6 +15,26 @@ else:
 
 
 class EmbeddingComposite(dimod.TemplateComposite):
+    """Composite for applying embedding a problem for a SAPISampler.
+
+    Args:
+        sampler: A dwave_sapi_dimod sampler object.
+
+    Attributes:
+        children (list): [`sampler`] where `sampler` is the input sampler.
+        structure: None, converts the structuted sampler to an unstructured
+            one.
+
+    Examples:
+        Composing a sampler:
+
+        >>> sampler = sapi.EmbeddingComposite(sapi.SAPILocalSampler(solver_name))
+
+        The composed sampler can now be used as a dimod sampler
+
+        >>> response = sampler.sample_ising({}, {})
+
+    """
     def __init__(self, sampler):
         # puts sampler into self.children
         dimod.TemplateComposite.__init__(self, sampler)
@@ -27,6 +47,31 @@ class EmbeddingComposite(dimod.TemplateComposite):
     @dimod.decorators.ising(1, 2)
     @dimod.decorators.ising_index_labels(1, 2)
     def sample_ising(self, h, J, **sapi_kwargs):
+        """Embeds the given problem using sapi's find_embedding then invokes
+        the given sampler to solve it.
+
+        Args:
+            h (dict/list): The linear terms in the Ising problem. If a
+                dict, should be of the form {v: bias, ...} where v is
+                a variable in the Ising problem, and bias is the linear
+                bias associated with v. If a list, should be of the form
+                [bias, ...] where the indices of the biases are the
+                variables in the Ising problem.
+            J (dict): A dictionary of the quadratic terms in the Ising
+                problem. Should be of the form {(u, v): bias} where u,
+                v are variables in the Ising problem and bias is the
+                quadratic bias associated with u, v.
+            Additional keyword parameters are the same as for
+            SAPI's solve_ising function, see QUBIST documentation.
+
+        Returns:
+            :class:`dimod.SpinResponse`: The unembedded samples.
+
+        Examples:
+            >>> sampler = sapi.EmbeddingComposite(sapi.SAPILocalSampler('c4-sw_optimize'))
+            >>> response = sampler.sample_ising({}, {(0, 1): 1, (0, 2): 1, (1, 2): 1})
+
+        """
 
         sampler = self._child
 

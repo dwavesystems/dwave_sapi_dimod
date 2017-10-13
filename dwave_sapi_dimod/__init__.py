@@ -2,7 +2,7 @@ from __future__ import absolute_import
 
 import sys as _sys
 
-__version__ = '0.2'
+__version__ = '0.3'
 
 _PY2 = _sys.version_info[0] == 2
 

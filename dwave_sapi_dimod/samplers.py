@@ -31,7 +31,8 @@ class SAPILocalSampler(dimod.TemplateSampler):
             returned by `solver_names`.
 
     Attributes:
-        structure (set): The set of edges available to the solver.
+        structure (tuple): (nodes, edges), the set of nodes and edges
+            available to the solver.
 
     Notes:
         See QUBIST documentation at https://dw2x.dwavesys.com/ for
@@ -109,7 +110,8 @@ class SAPISampler(SAPILocalSampler):
         proxy_url (str): Proxy url.
 
     Attributes:
-        TODO
+        structure (tuple): (nodes, edges), the set of nodes and edges
+            available to the solver.
 
     Notes:
         See QUBIST documentation at https://dw2x.dwavesys.com/ for
