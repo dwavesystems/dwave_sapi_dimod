@@ -3,10 +3,15 @@ import random
 
 import dimod
 
-from dwave_sapi_dimod import SAPISampler, SAPILocalSampler
+from dwave_sapi_dimod import SAPISampler, SAPILocalSampler, EmbeddingComposite
+
+solver = 'c4-sw_optimize'
 
 
-class MethodTests:
+class TestSAPILocalSampler(unittest.TestCase):
+    def setUp(self):
+        self.sampler = SAPILocalSampler(solver)
+
     def test_simple_problem(self):
         # solver is an exact solver so can check results directly
         sampler = self.sampler
@@ -14,7 +19,7 @@ class MethodTests:
         h = {0: 1}
         J = {(0, 4): -1}
 
-        response = sampler.sample_structured_ising(h, J)
+        response = sampler.sample_ising(h, J)
         self.check_spin_response(response, h, J)
 
         # check that the min energy sample has the answer we expected
@@ -24,126 +29,106 @@ class MethodTests:
 
         Q = {(0, 0): 1, (0, 4): -1.2, (4, 4): .1}
 
-        response = sampler.sample_structured_qubo(Q)
+        response = sampler.sample_qubo(Q)
 
         # check that the min energy sample has the answer we expected
         min_sample = next(iter(response))
         self.assertEqual(min_sample[0], 1)
         self.assertEqual(min_sample[4], 1)
 
-        # now an unembded
-        h = {0: 1}
-        J = {(0, 1): -1}
-        response = sampler.sample_ising(h, J)
-        self.check_spin_response(response, h, J)
+    # def test_small_edge_cases(self):
+    #     sampler = self.sampler
 
-        # check that the min energy sample has the answer we expected
-        min_sample = next(iter(response))
-        self.assertEqual(min_sample[0], -1)
-        self.assertEqual(min_sample[1], -1)
+    #     # empty
 
-        Q = {(0, 0): 1, (0, 1): -1.2, (1, 1): .1}
+    #     h = {}
+    #     J = {}
+    #     response = sampler.sample_ising(h, J)
+    #     self.check_spin_response(response, h, J)
+    #     response = sampler.sample_structured_ising(h, J)
+    #     self.check_spin_response(response, h, J)
 
-        response = sampler.sample_qubo(Q)
+    #     Q = {}
+    #     response = sampler.sample_qubo(Q)
+    #     self.check_binary_response(response, Q)
+    #     response = sampler.sample_structured_qubo(Q)
+    #     self.check_binary_response(response, Q)
 
-        # check that the min energy sample has the answer we expected
-        min_sample = next(iter(response))
-        self.assertEqual(min_sample[0], 1)
-        self.assertEqual(min_sample[1], 1)
+    #     # one node
 
-    def test_small_edge_cases(self):
-        sampler = self.sampler
+    #     h = {0: 1}
+    #     J = {}
+    #     response = sampler.sample_ising(h, J)
+    #     self.check_spin_response(response, h, J)
+    #     response = sampler.sample_structured_ising(h, J)
+    #     self.check_spin_response(response, h, J)
 
-        # empty
+    #     Q = {(0, 0): 1}
+    #     response = sampler.sample_qubo(Q)
+    #     self.check_binary_response(response, Q)
+    #     response = sampler.sample_structured_qubo(Q)
+    #     self.check_binary_response(response, Q)
 
-        h = {}
-        J = {}
-        response = sampler.sample_ising(h, J)
-        self.check_spin_response(response, h, J)
-        response = sampler.sample_structured_ising(h, J)
-        self.check_spin_response(response, h, J)
+    #     # one edge
 
-        Q = {}
-        response = sampler.sample_qubo(Q)
-        self.check_binary_response(response, Q)
-        response = sampler.sample_structured_qubo(Q)
-        self.check_binary_response(response, Q)
+    #     h = {}
+    #     J = {(0, 4): -1}  # must be a real coupler to test structured
+    #     response = sampler.sample_ising(h, J)
+    #     self.check_spin_response(response, h, J)
+    #     response = sampler.sample_structured_ising(h, J)
+    #     self.check_spin_response(response, h, J)
 
-        # one node
+    #     Q = {(0, 4): 1}   # must be a real coupler to test structured
+    #     response = sampler.sample_qubo(Q)
+    #     self.check_binary_response(response, Q)
+    #     response = sampler.sample_structured_qubo(Q)
+    #     self.check_binary_response(response, Q)
 
-        h = {0: 1}
-        J = {}
-        response = sampler.sample_ising(h, J)
-        self.check_spin_response(response, h, J)
-        response = sampler.sample_structured_ising(h, J)
-        self.check_spin_response(response, h, J)
+    #     # two nodes
 
-        Q = {(0, 0): 1}
-        response = sampler.sample_qubo(Q)
-        self.check_binary_response(response, Q)
-        response = sampler.sample_structured_qubo(Q)
-        self.check_binary_response(response, Q)
+    #     h = {0: -1, 6: 1}
+    #     J = {}
+    #     response = sampler.sample_ising(h, J)
+    #     self.check_spin_response(response, h, J)
+    #     response = sampler.sample_structured_ising(h, J)
+    #     self.check_spin_response(response, h, J)
 
-        # one edge
+    #     Q = {(0, 0): 1, (6, 6): 1}
+    #     response = sampler.sample_qubo(Q)
+    #     self.check_binary_response(response, Q)
+    #     response = sampler.sample_structured_qubo(Q)
+    #     self.check_binary_response(response, Q)
 
-        h = {}
-        J = {(0, 4): -1}  # must be a real coupler to test structured
-        response = sampler.sample_ising(h, J)
-        self.check_spin_response(response, h, J)
-        response = sampler.sample_structured_ising(h, J)
-        self.check_spin_response(response, h, J)
+    # def test_triangle(self):
+    #     # smallest graph that will require a real embedding
+    #     sampler = self.sampler
 
-        Q = {(0, 4): 1}   # must be a real coupler to test structured
-        response = sampler.sample_qubo(Q)
-        self.check_binary_response(response, Q)
-        response = sampler.sample_structured_qubo(Q)
-        self.check_binary_response(response, Q)
+    #     h = {}
+    #     J = {(0, 1): 1, (1, 2): 1, (0, 2): 1}
+    #     response = sampler.sample_ising(h, J)
+    #     self.check_spin_response(response, h, J)
 
-        # two nodes
+    #     Q = {(0, 1): 1, (1, 2): 1, (0, 2): 1}
+    #     response = sampler.sample_qubo(Q)
+    #     self.check_binary_response(response, Q)
 
-        h = {0: -1, 6: 1}
-        J = {}
-        response = sampler.sample_ising(h, J)
-        self.check_spin_response(response, h, J)
-        response = sampler.sample_structured_ising(h, J)
-        self.check_spin_response(response, h, J)
+    # def test_random_problem(self):
+    #     sampler = self.sampler
 
-        Q = {(0, 0): 1, (6, 6): 1}
-        response = sampler.sample_qubo(Q)
-        self.check_binary_response(response, Q)
-        response = sampler.sample_structured_qubo(Q)
-        self.check_binary_response(response, Q)
+    #     edges = sampler.structure
 
-    def test_triangle(self):
-        # smallest graph that will require a real embedding
-        sampler = self.sampler
+    #     nodes = set().union(*edges)
 
-        h = {}
-        J = {(0, 1): 1, (1, 2): 1, (0, 2): 1}
-        response = sampler.sample_ising(h, J)
-        self.check_spin_response(response, h, J)
+    #     h = {v: random.uniform(-2, 2) for v in nodes}
+    #     J = {(u, v): random.uniform(-1, 1) for u, v in edges if u < v}
 
-        Q = {(0, 1): 1, (1, 2): 1, (0, 2): 1}
-        response = sampler.sample_qubo(Q)
-        self.check_binary_response(response, Q)
+    #     response = sampler.sample_structured_ising(h, J)
+    #     self.check_spin_response(response, h, J)
 
-    def test_random_problem(self):
-        sampler = self.sampler
-
-        edges = sampler.structure
-
-        nodes = set().union(*edges)
-
-        h = {v: random.uniform(-2, 2) for v in nodes}
-        J = {(u, v): random.uniform(-1, 1) for u, v in edges if u < v}
-
-        response = sampler.sample_structured_ising(h, J)
-        self.check_spin_response(response, h, J)
-
-        Q = J.copy()
-        Q.update({(v, v): h[v] for v in h})
-        response = sampler.sample_structured_qubo(Q)
-        self.check_binary_response(response, Q)
+    #     Q = J.copy()
+    #     Q.update({(v, v): h[v] for v in h})
+    #     response = sampler.sample_structured_qubo(Q)
+    #     self.check_binary_response(response, Q)
 
     def check_spin_response(self, response, h, J):
         variables = set(h)
@@ -163,6 +148,23 @@ class MethodTests:
             self.assertLessEqual(abs(dimod.qubo_energy(Q, sample) - energy), 10**-5)
 
 
-class TestSAPILocalSampler(unittest.TestCase, MethodTests):
-    def setUp(self):
-        self.sampler = SAPILocalSampler(solver)
+
+        # # now an unembdeded
+        # h = {0: 1}
+        # J = {(0, 1): -1}
+        # response = sampler.sample_ising(h, J)
+        # self.check_spin_response(response, h, J)
+
+        # # check that the min energy sample has the answer we expected
+        # min_sample = next(iter(response))
+        # self.assertEqual(min_sample[0], -1)
+        # self.assertEqual(min_sample[1], -1)
+
+        # Q = {(0, 0): 1, (0, 1): -1.2, (1, 1): .1}
+
+        # response = sampler.sample_qubo(Q)
+
+    #     # check that the min energy sample has the answer we expected
+    #     min_sample = next(iter(response))
+    #     self.assertEqual(min_sample[0], 1)
+    #     self.assertEqual(min_sample[1], 1)
