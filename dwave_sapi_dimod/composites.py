@@ -65,7 +65,9 @@ class EmbeddingComposite(dimod.TemplateComposite):
                 problem. Should be of the form {(u, v): bias} where u,
                 v are variables in the Ising problem and bias is the
                 quadratic bias associated with u, v.
-            embedding_tag: TODO
+            embedding_tag: Allows the user to specify a tag for the generated
+                embedding. Useful for when the user wishes to submit multiple
+                problems with the same logical structure.
             Additional keyword parameters are the same as for
             SAPI's solve_ising function, see QUBIST documentation.
 
@@ -75,6 +77,13 @@ class EmbeddingComposite(dimod.TemplateComposite):
         Examples:
             >>> sampler = sapi.EmbeddingComposite(sapi.SAPILocalSampler('c4-sw_optimize'))
             >>> response = sampler.sample_ising({}, {(0, 1): 1, (0, 2): 1, (1, 2): 1})
+
+            Using the embedding_tag, the embedding is generated only once.
+            >>> h = {0: .1, 1: 1.3, 2: -1.}
+            >>> J = {(0, 1): 1, (1, 2): 1, (0, 2): 1}
+            >>> sampler = sapi.EmbeddingComposite(sapi.SAPILocalSampler('c4-sw_optimize'))
+            >>> response0 = sampler.sample_ising(h, J, embedding_tag='K3')
+            >>> response1 = sampler.sample_ising(h, J, embedding_tag='K3')
 
         """
         # get the sampler that is used by the composite
