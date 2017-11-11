@@ -9,6 +9,7 @@ setup(
     name='dwave_sapi_dimod',
     version=__version__,
     packages=packages,
-    install_requires=['dimod>=0.3.0'],
+    install_requires=['dimod>=0.3.0',
+                      'dwave_sapi2'],
     license='Apache 2.0',
 )

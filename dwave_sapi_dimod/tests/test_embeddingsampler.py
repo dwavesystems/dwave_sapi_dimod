@@ -6,6 +6,7 @@ Both of these samplers are unstructured.
 
 import unittest
 import random
+import itertools
 
 import dimod
 
@@ -90,6 +91,21 @@ class TestEmbeddingCompositeSAPILocalSampler(unittest.TestCase):
             self.assertLessEqual(abs(dimod.qubo_energy(Q, sample) - energy), 10**-5)
 
             self.assertEqual(len(sample), len(variables))
+
+    def test_embedding_tag(self):
+        # check reusing the same embedding tag
+
+        sampler = self.sampler
+
+        # get an embedding on a complete K10
+        h = {v: .01 * v for v in range(-5, 5)}
+        J = {(u, v): 1 for u, v in itertools.combinations(h, 2)}
+
+        responses = []
+        for __ in range(10):
+            responses.append(sampler.sample_ising(h, J, embedding_tag='K10'))
+
+
 
 
 @unittest.skipUnless(_sapitoken, "need a sapi token for testing")
