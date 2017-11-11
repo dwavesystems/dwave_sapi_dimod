@@ -1,0 +1,28 @@
+language: python
+
+matrix:
+    include:
+        - os: linux
+          sudo: required
+          python: "2.7"
+          env: TOXENV=py27
+        - os: osx
+          language: generic
+          env: TOXENV=py27
+          before_install:
+            - brew update
+            - virtualenv env -p python2
+            - source env/bin/activate
+
+install:
+    - pip install -r requirements.txt
+    - pip install .
+
+deploy:
+  provider: pypi
+  user: "dwtools"
+  password:
+    secure: "UZia1Tx985g+w3gI5+rj4L2fP1mXphAXQmtyfyJrXf+BEWq8SEIz0UeQIZS3DHzE1pCnQ/QgKClkPl/eWiuJkL/n9qw1+u0tl2YXTFCqrH7F5fmYysq9i5tEjaLw5Jw6m/HG0ogYKs2y0Zh0IO90weu5JMvxSeMhOCH6Zc4aihY0DowvRrKP1H42L+E1THmm8BFZznvZsDY/JLeccyO9xqcvortYK7R78BBRiPjkq9ZUjf+9ShY0BwsMH7c4+3/lwhZnazGfOfFxWbczwIqDYwEBxswtxesiYgMJnH2xDQWJHOCTFQ9DqxCff4K/AfCbBkB1iNjp4lD/u7GJ5It2eDNNy0GvGw8qaXWQ+wt/mXfsNlGOXNimdtAxPhL9mcekaVLT99xOtSJMi32rT2I54P80isgvZSApw57oPXoGqLcQAb1qqbibsSSDqcktcvMYDOvYDyertq8iqV5O25RmPccWUI5OvViR4oGfbQjUh5Via9OAT7ydlaAP/J1fODonz6Z/V2qyhHk5ZV/UEsrohnePscs/hSD16YtbztsoNTfLXPNSpYBitzH2ozKAtuo8A+mBZhE6V3ekRzVE/c2tWgSQLKZ+1qHek4rKKrZh+IakNdIJPPcy5cr3jQrjluZ+h+qjgOSVqc0qkdASNDQ1xrXvAKRd7/Leek5zwIEGdjE="
+    distributions: "sdist bdist_wheel"
+  on:
+    tags: true
