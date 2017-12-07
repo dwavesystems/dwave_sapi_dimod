@@ -117,7 +117,7 @@ class EmbeddingComposite(dimod.TemplateComposite):
             if len(h_list) > len(embeddings):
                 emb_qubits = set().union(*embeddings)
                 while len(h_list) > len(embeddings):
-                    for v in solver.properties['qubits']:
+                    for v in sampler.solver.properties['qubits']:
                         if v not in emb_qubits:
                             embeddings.append([v])
                             emb_qubits.add(v)
